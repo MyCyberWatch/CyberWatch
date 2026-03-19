@@ -219,6 +219,7 @@
     <div id="bottom-row">
       <div id="status-text">◇ CLICK ITEMS ABOVE TO SELECT FOR DIGEST</div>
       <button id="clear-btn" onclick="clearSelected()">CLEAR</button>
+      <button id="email-btn" onclick="shareViaEmail()" style="background:transparent;border:2px solid rgba(255,255,255,0.3);color:#c0d8e8;padding:10px 24px;font-size:11px;letter-spacing:3px;font-weight:700;font-family:'Courier New',monospace;cursor:pointer;transition:all 0.2s;">✉ SHARE VIA EMAIL</button>
       <button id="send-btn" onclick="sendToTelegram()">✈ SEND TO TELEGRAM</button>
     </div>
     <div id="send-result"></div>
@@ -418,6 +419,12 @@ function renderFeed(){
   document.getElementById("clear-btn").style.display=selCount>0?"block":"none";
   const sb=document.getElementById("send-btn");
   sb.className=selCount>0?"active":""; sb.disabled=selCount===0;
+  const eb=document.getElementById("email-btn");
+  if(eb){
+    eb.style.borderColor=selCount>0?"#00ccff":"rgba(255,255,255,0.3)";
+    eb.style.color=selCount>0?"#00e5ff":"#c0d8e8";
+    eb.style.boxShadow=selCount>0?"0 0 20px rgba(0,200,255,0.2)":"none";
+  }
 
   const feed=document.getElementById("feed");
   if(filtered.length===0){
@@ -509,6 +516,35 @@ async function sendToTelegram(){
     showResult("error: "+e.message);
   }
   sb.textContent="✈ SEND TO TELEGRAM"; sb.disabled=false;
+}
+
+function shareViaEmail() {
+  const items = Object.values(selected).filter(Boolean);
+  if (!items.length) {
+    alert("Please select at least one item first.");
+    return;
+  }
+  const emojis = {CRITICAL:"🔴", HIGH:"🟠", MEDIUM:"🟡", LOW:"🟢", INFO:"🔵"};
+  const subject = encodeURIComponent("CyberWatch Threat Intel Digest — " + new Date().toDateString());
+  const lines = [];
+  lines.push("CYBERWATCH SENTINEL — THREAT INTEL DIGEST");
+  lines.push("Date: " + new Date().toUTCString());
+  lines.push("Items: " + items.length);
+  lines.push("=".repeat(40));
+  lines.push("");
+  items.forEach((item, idx) => {
+    const emoji = emojis[item.severity] || "⚪";
+    lines.push(emoji + " [" + item.severity + "] " + item.sourceLabel);
+    lines.push("Title: " + item.title);
+    if (item.desc) lines.push("Summary: " + item.desc.slice(0, 200) + "...");
+    lines.push("Link: " + item.link);
+    if (idx < items.length - 1) lines.push("-".repeat(30));
+    lines.push("");
+  });
+  lines.push("=".repeat(40));
+  lines.push("Sent via CyberWatch Sentinel");
+  const body = encodeURIComponent(lines.join("\n"));
+  window.location.href = "mailto:?subject=" + subject + "&body=" + body;
 }
 
 let autoSendEnabled = true;
